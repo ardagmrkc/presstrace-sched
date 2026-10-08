@@ -1,0 +1,27 @@
+# IAR EWARM build output and per-user settings
+**/EWARM/Debug/
+**/EWARM/Release/
+**/EWARM/settings/
+*.dep
+*.pbd
+*.pbi
+*.pbw
+*.dbgdt
+*.wsdt
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Host test binaries
+test_uart_arbiter
+test_tx_queue
+test_button_filter
+*.exe
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+.vscode/

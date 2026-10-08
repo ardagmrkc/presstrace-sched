@@ -1,0 +1,44 @@
+// 1) Gorevler: FreeRTOS bunlari fonksiyon isaretcisiyle baslatir.
+//    static fonksiyonlar [modul.o] ile yazilir.
+call graph root [task]: uart_tx_task   [uart_tx_task.o],
+                        button_task    [button_task.o],
+                        telemetry_task [telemetry_task.o],
+                        prvIdleTask    [tasks.o];
+
+// 2) Kesmeler: vektor tablosundan cagrilir, hepsi CSTACK (MSP) kullanir.
+call graph root [interrupt]: EXTI0_IRQHandler, USART2_IRQHandler,
+                             xPortSysTickHandler, xPortPendSVHandler;
+
+// 3) Reset_Handler (assembly) main'den once SystemInit'i cagirir.
+call graph root [startup]: SystemInit;
+
+// 4) Assembly fonksiyonlarinin yigin bilgisini elle ver (portasm.s'e bakarak).
+function xPortPendSVHandler: 8, calls vTaskSwitchContext;   // stmdb sp!, {r0, r3}
+function vPortStartFirstTask: 0;
+function vPortEnableVFP: 0;
+
+// 5) Hic calismayan: bir gorev fonksiyonu geri donerse cagrilir, bizde donmez.
+exclude prvTaskExitError [port.o];
+
+// 6) SEGGER SystemView (USE_SYSVIEW 1). "?" oneki: USE_SYSVIEW 0 iken bu
+//    fonksiyonlar linke girmez, uyari verilmez.
+//    a) Isaretci ile cagrilar: SEGGER_SYSVIEW_Init'e verdigimiz geri
+//       cagirmalar. Start/Stop geri cagirmalari ve modul ek aciklamasi
+//       (pfSendModuleDesc) NULL; o cagrilar hic yapilmaz.
+possible calls ?SEGGER_SYSVIEW_GetSysDesc:    ?_cbSendSystemDesc [SEGGER_SYSVIEW_Config_FreeRTOS.o];
+possible calls ?SEGGER_SYSVIEW_Start:         ?_cbSendSystemDesc [SEGGER_SYSVIEW_Config_FreeRTOS.o];
+possible calls ?SEGGER_SYSVIEW_RecordSystime: ?_cbGetTime [SEGGER_SYSVIEW_FreeRTOS.o];
+possible calls ?_RecordSystime:               ?_cbGetTime [SEGGER_SYSVIEW_FreeRTOS.o];
+possible calls ?SEGGER_SYSVIEW_SendTaskList:  ?_cbSendTaskList [SEGGER_SYSVIEW_FreeRTOS.o];
+possible calls ?SEGGER_SYSVIEW_SendModule:;
+possible calls ?SEGGER_SYSVIEW_SendModuleDescription:;
+possible calls ?SEGGER_SYSVIEW_Stop:;
+//    b) Ozyineleme: _SendPacket -> _CheckDownBuffer -> _HandleIncomingPacket ->
+//       SEGGER_SYSVIEW_Start -> _SendPacket. SEGGER_SYSVIEW.c (_CheckDownBuffer,
+//       RecursionCnt): "this routine can call itself once, but no more".
+//       Not: Halkaya en derin dongunun disindan da girildigi icin (ornek
+//       _SendPacket_Ex) linker bu sinira ragmen ust sinir hesaplayamaz
+//       (Ls017/Ls029, "*?*"). USE_SYSVIEW 1 derlemesinde yigin payi calisma
+//       aninda olculur (stack_hwm_* sayaclari, SystemView gorev listesi);
+//       USE_SYSVIEW 0 derlemesinde analiz uyarisiz ve tamdir.
+max recursion depth ?_CheckDownBuffer [SEGGER_SYSVIEW.o]: 1;

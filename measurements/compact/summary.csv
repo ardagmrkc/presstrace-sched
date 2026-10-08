@@ -1,0 +1,7 @@
+run,variant,trace,fast_path,compact_frame,scenario,telemetry_hz_nominal,extra_load_ms_nominal,tel_per_period_nominal,n_events,n_ok,n_drop,n_tx_error,n_timeout,drop_btn_queue,drop_tx_queue,n_other,r_min_ms,r_mean_ms,r_p95_ms,r_max_ms,deadline_miss,wait_mean_ms,prep_mean_ms,txq_mean_ms,uart_mean_ms,accepted,repeat,btn_queue_drop,tx_queue_drop,tx_queue_max,pool_overflow,droplog_overflow,tx_timeout,tx_start_fail,spurious_tc,tel_sent,tel_drop,tel_period_avg_us,tel_wait_avg_us,tel_wait_max_us,btn_direct,btn_latched,btn_fallback,btn_result_lost,tel_rate_hz_measured,notes
+ATK_S5,A,True,False,True,S5,100,5,1,30,30,0,0,0,0,0,0,0.993,3.203,6.242,6.842,0,1.659,0.003,0.665,0.876,30,33,0,0,2,0,0,0,0,0,5890,0,11024,74,2918,,,,,90.71,
+BTK_S5,B,True,False,True,S5,100,5,1,30,30,0,0,0,0,0,0,0.994,2.625,5.632,5.889,0,0.024,0.002,1.721,0.877,30,17,0,0,2,0,0,0,0,0,7175,0,10015,74,2893,,,,,99.85,
+CTK_S5,C,True,False,True,S5,100,5,1,30,30,0,0,0,0,0,0,0.963,1.897,5.098,5.608,0,0.018,0.002,1.002,0.875,30,41,0,0,2,0,0,0,0,0,5666,0,9999,64,2893,,,,,100.01,
+ATK_S6,A,True,False,True,S6,10,0,4,30,30,0,0,0,0,0,0,0.964,1.18,2.661,4.084,0,0.017,0.002,0.286,0.874,30,63,0,0,4,0,0,0,0,0,2336,0,99998,1402,5529,,,,,10.0,
+BTK_S6,B,True,False,True,S6,10,0,4,30,30,0,0,0,0,0,0,0.992,0.996,1.002,1.01,0,0.024,0.003,0.094,0.876,30,76,0,0,4,0,0,0,0,0,2752,0,100159,1429,5531,,,,,9.98,
+CTK_S6,C,True,False,True,S6,10,0,4,30,30,0,0,0,0,0,0,0.99,1.011,1.001,1.479,0,0.024,0.003,0.107,0.877,30,66,0,0,4,0,0,0,0,0,2552,0,100172,1433,5533,,,,,9.98,

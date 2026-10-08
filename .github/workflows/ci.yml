@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  host-tests:
+    name: Host unit tests (gcc)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Button debounce filter (button.c)
+        run: |
+          gcc -std=c11 -Wall -Wextra -Werror -I tests/host/mock_btn -I firmware/Core/Inc \
+              tests/host/test_button_filter.c firmware/Core/Src/button.c -o test_button_filter
+          ./test_button_filter
+
+      - name: TX queue selection rule (tx_queue.c)
+        run: |
+          gcc -std=c11 -Wall -Wextra -Werror -I tests/host/mock_txq -I firmware/Core/Inc \
+              tests/host/test_tx_queue.c firmware/Core/Src/tx_queue.c -o test_tx_queue
+          ./test_tx_queue
+
+      - name: UART arbiter, 64-byte ASCII frames (uart.c + protocol.c)
+        run: |
+          gcc -std=c11 -Wall -Wextra -Werror -DPROTOCOL_COMPACT=0 -I tests/host/mock -I firmware/Core/Inc \
+              tests/host/test_uart_arbiter.c firmware/Core/Src/uart.c firmware/Core/Src/protocol.c -o test_uart_arbiter
+          ./test_uart_arbiter
+
+      - name: UART arbiter, compact binary frames (uart.c + protocol.c)
+        run: |
+          gcc -std=c11 -Wall -Wextra -Werror -DPROTOCOL_COMPACT=1 -I tests/host/mock -I firmware/Core/Inc \
+              tests/host/test_uart_arbiter.c firmware/Core/Src/uart.c firmware/Core/Src/protocol.c -o test_uart_arbiter
+          ./test_uart_arbiter
+
+  analysis:
+    name: Reproduce summaries from raw logs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: analysis/requirements.txt
+
+      - run: pip install -r analysis/requirements.txt
+
+      - name: Recompute per-run summaries and plots
+        run: |
+          python analysis/analyze.py
+          python analysis/compare_frames.py
+
+      - name: Committed summaries must match the raw logs
+        run: git diff --exit-code --stat -- measurements

@@ -1,0 +1,7 @@
+run,variant,trace,fast_path,compact_frame,scenario,telemetry_hz_nominal,extra_load_ms_nominal,tel_per_period_nominal,n_events,n_ok,n_drop,n_tx_error,n_timeout,drop_btn_queue,drop_tx_queue,n_other,r_min_ms,r_mean_ms,r_p95_ms,r_max_ms,deadline_miss,wait_mean_ms,prep_mean_ms,txq_mean_ms,uart_mean_ms,accepted,repeat,btn_queue_drop,tx_queue_drop,tx_queue_max,pool_overflow,droplog_overflow,tx_timeout,tx_start_fail,spurious_tc,tel_sent,tel_drop,tel_period_avg_us,tel_wait_avg_us,tel_wait_max_us,btn_direct,btn_latched,btn_fallback,btn_result_lost,tel_rate_hz_measured,notes
+AT_S5,A,True,False,False,S5,100,5,1,30,30,0,0,0,0,0,0,2.868,5.456,10.23,10.405,0,1.114,0.002,1.56,2.781,30,26,0,0,2,0,0,0,0,0,4643,0,9999,59,2912,,,,,100.01,
+BT_S5,B,True,False,False,S5,100,5,1,30,30,0,0,0,0,0,0,2.871,4.644,7.135,7.465,0,0.018,0.002,1.844,2.781,30,60,0,0,2,0,0,0,0,0,5293,0,9999,67,2889,,,,,100.01,
+CT_S5,C,True,False,False,S5,100,5,1,30,30,0,0,0,0,0,0,2.869,4.21,6.364,6.795,0,0.018,0.002,1.408,2.781,30,49,0,0,2,0,0,0,0,0,6767,0,9999,63,2890,,,,,100.01,
+AT_S6,A,True,False,False,S6,10,0,4,30,30,0,0,0,0,0,0,2.869,3.546,8.355,13.059,0,0.018,0.002,0.745,2.781,30,35,0,0,4,0,0,0,0,0,2176,0,99998,4316,11353,,,,,10.0,
+BT_S6,B,True,False,False,S6,10,0,4,30,30,0,0,0,0,0,0,2.87,4.486,12.813,13.077,0,0.018,0.002,1.685,2.781,30,89,0,0,4,0,0,0,0,0,2284,0,99999,4318,11356,,,,,10.0,
+CT_S6,C,True,False,False,S6,10,0,4,30,30,0,0,0,0,0,0,2.869,3.036,4.09,4.925,0,0.018,0.002,0.235,2.781,30,67,0,0,4,0,0,0,0,0,2164,0,99999,4329,11362,,,,,10.0,

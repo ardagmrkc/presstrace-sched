@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PressTrace sched — A/B/C Ölçüm Masası</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header>
+  <h1>Buton Yanıt Süresi — A/B/C</h1>
+  <div id="conn-panel">
+    <span id="conn-status" class="status status--disconnected">Bağlı değil</span>
+    <button id="btn-connect">Bağlan</button>
+    <button id="btn-disconnect" disabled>Bağlantıyı Kes</button>
+    <span id="serial-support-warning" class="warning" hidden>
+      Bu tarayıcı Web Serial API desteklemiyor. Chrome veya Edge kullanın.
+    </span>
+  </div>
+</header>
+
+<div id="press-toast" class="toast" hidden></div>
+
+<main>
+  <section class="panel panel--wide" id="panel-scenario">
+    <div class="panel-header-row">
+      <h2>Sürüm ve senaryo</h2>
+      <span class="hint" id="sc-status">Bağlı değil</span>
+    </div>
+    <h3 class="sub">Sürüm</h3>
+    <div class="sc-buttons" id="var-buttons">
+      <button class="sc-btn var-btn" data-var="A" disabled><b>A</b><span>Telemetry 3 &gt; Button 2 · ortak FIFO</span></button>
+      <button class="sc-btn var-btn" data-var="B" disabled><b>B</b><span>Button 4 &gt; Telemetry 3 · ortak FIFO</span></button>
+      <button class="sc-btn var-btn" data-var="C" disabled><b>C</b><span>Button 4 &gt; Telemetry 3 · bekleyen BTN önce</span></button>
+    </div>
+    <h3 class="sub">Senaryo</h3>
+    <div class="sc-buttons" id="sc-buttons">
+      <button class="sc-btn" data-sc="0" disabled><b>S0</b><span>Telemetri kapalı (kurulum kontrolü)</span></button>
+      <button class="sc-btn" data-sc="5" disabled><b>S5</b><span>100 Hz + ~5 ms CPU işi</span></button>
+      <button class="sc-btn" data-sc="6" disabled><b>S6</b><span>100 ms'de 4 TEL (darbe)</span></button>
+    </div>
+    <p class="warmup" id="warmup"></p>
+  </section>
+
+  <section class="panel" id="panel-status">
+    <h2>Durum</h2>
+    <dl class="kv">
+      <dt>Sürüm (kartın bildirdiği)</dt><dd id="stat-variant">—</dd>
+      <dt>Aktif senaryo</dt><dd id="stat-scenario">—</dd>
+      <dt>Bu penceredeki basış</dt><dd id="stat-btn-count">0</dd>
+      <dt>Son olay kimliği (açılıştan beri)</dt><dd id="stat-last-event">—</dd>
+      <dt>Sıra (seq) boşluğu</dt><dd id="stat-seq-gaps">0</dd>
+      <dt>Hatalı satır (64 bayt / LF)</dt><dd id="stat-frame-errors">0</dd>
+    </dl>
+    <h3 class="sub">Pencere sayaçları</h3>
+    <p class="hint" id="stat-window-hint">Ölçüm sırasında hatta basılmaz; "Ölçümü bitir" ile karttan gelir.</p>
+    <dl class="kv" id="stat-window"></dl>
+  </section>
+
+  <section class="panel" id="panel-telemetry">
+    <h2>Telemetri (TEL)</h2>
+    <dl class="kv">
+      <dt>Kart sıcaklığı</dt><dd id="tel-temp" class="big">—</dd>
+      <dt>Ham ADC / VDDA</dt><dd id="tel-temp-raw">—</dd>
+      <dt>Gerçek periyot</dt><dd id="tel-period">—</dd>
+      <dt>TX kuyruğu (üretimde)</dt><dd id="tel-txq">—</dd>
+      <dt>Ek CPU işi (extra_load_us)</dt><dd id="tel-extra-load">—</dd>
+      <dt>Son alım / seq</dt><dd id="tel-last-time">—</dd>
+    </dl>
+  </section>
+
+  <section class="panel panel--wide" id="panel-chart">
+    <h2>Yanıt Süresi (R = t4 − t0)</h2>
+    <canvas id="chart"></canvas>
+    <p class="hint">Yalnızca "ok" durumundaki olaylar çizilir. Kırmızı çizgi: 20 ms deney bütçesi. Turuncu nokta: bütçe aşımı.</p>
+  </section>
+
+  <section class="panel panel--wide" id="panel-breakdown">
+    <div class="panel-header-row">
+      <h2>Gecikme dağılımı</h2>
+      <span class="hint" id="bd-selected"></span>
+    </div>
+    <div class="bd-row">
+      <div class="bd-label" id="bd-label-event">Olay</div>
+      <div class="bd-track" id="bd-bar-event"></div>
+    </div>
+    <div class="bd-row" id="bd-row-avg" hidden>
+      <div class="bd-label" id="bd-label-avg">Ortalama</div>
+      <div class="bd-track" id="bd-bar-avg"></div>
+    </div>
+    <div class="bd-row">
+      <div class="bd-label">ISR girişinden itibaren (ms)</div>
+      <div class="bd-axis" id="bd-axis"></div>
+    </div>
+    <div class="bd-legend" id="bd-legend"></div>
+    <div class="bd-metrics">
+      <div><div class="bd-big" id="bd-r">—</div><div class="hint">R = t₄ − t₀</div></div>
+      <div><div class="bd-big" id="bd-margin">—</div><div class="hint">Deadline payı: 20 ms − R</div></div>
+    </div>
+    <div class="bd-verdict pending" id="bd-verdict"></div>
+  </section>
+
+  <section class="panel panel--wide" id="panel-events">
+    <div class="panel-header-row">
+      <h2>Buton Olayları</h2>
+      <button id="btn-dump" disabled>Ölçümü bitir ve kayıtları al</button>
+      <button id="btn-export-csv">Kaydet (CSV + ham oturum)</button>
+      <button id="btn-clear">Listeyi Temizle</button>
+    </div>
+    <p class="hint">
+      Ölçüm sırasında yalnızca t₀–t₂ canlı gelir. t₃, t₄ ve durum kartın kayıt havuzunda (64 olay)
+      tutulur ve hattı meşgul etmemek için "Ölçümü bitir" ile tek seferde alınır. Kaydet üç dosya
+      indirir: <code>&lt;sürüm&gt;_S&lt;n&gt;.csv</code> (olaylar), <code>&lt;sürüm&gt;_S&lt;n&gt;_counters.csv</code>
+      (pencere sayaçları) ve <code>&lt;sürüm&gt;_S&lt;n&gt;_raw.txt</code> (pencerenin ham seri oturumu).
+    </p>
+    <p class="hint" id="dump-summary"></p>
+    <table id="events-table">
+      <thead>
+        <tr>
+          <th>event_id</th><th>senaryo</th><th>t0 (µs)</th><th>t1 (µs)</th>
+          <th>t2 (µs)</th><th>t3 (µs)</th><th>t4 (µs)</th><th>R (ms)</th>
+          <th>bütçe</th><th>durum</th><th>not</th>
+        </tr>
+      </thead>
+      <tbody id="events-tbody"></tbody>
+    </table>
+  </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
