@@ -1,5 +1,6 @@
 #ifndef MOCK_BTN_FREERTOS_H
 #define MOCK_BTN_FREERTOS_H
+#include <stddef.h> /* gercek FreeRTOS.h gibi: NULL ve size_t buradan (glibc stdint.h vermez) */
 #include <stdint.h>
 typedef long BaseType_t;
 #define pdFALSE 0

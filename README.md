@@ -82,6 +82,37 @@ Where the time goes. These are stage means from the 64-byte runs; the full table
 | **ASCII → binary frame**, S6 | Each frame occupies the line 2.77 → 0.82 ms. The wait behind a 4-frame burst shrinks by the same factor. |
 | **ASCII → binary frame**, B/S5 | t3−t2 only goes from 1.84 to 1.72 ms. This wait is CPU, not line, and frame size cannot fix it. |
 
+**Mean stage durations per run.** Purple is ButtonTask's CPU wait (t1−t0), blue is TX-queue and CPU wait before the
+transfer (t3−t2), and green is the frame on the wire (t4−t3).
+
+<table>
+  <tr>
+    <td width="50%"><img src="analysis/plots/ascii64/stages_by_scenario.png" alt="Mean stage durations per run, 64-byte ASCII frames"></td>
+    <td width="50%"><img src="analysis/plots/compact/stages_by_scenario.png" alt="Mean stage durations per run, compact binary frames"></td>
+  </tr>
+  <tr>
+    <td align="center">64-byte ASCII frames</td>
+    <td align="center">Compact binary frames</td>
+  </tr>
+</table>
+
+<details>
+<summary><b>Response time of every press</b> (click to expand)</summary>
+<br>
+<table>
+  <tr>
+    <td width="50%"><img src="analysis/plots/ascii64/r_vs_event.png" alt="Response time per press, 64-byte ASCII frames"></td>
+    <td width="50%"><img src="analysis/plots/compact/r_vs_event.png" alt="Response time per press, compact binary frames"></td>
+  </tr>
+  <tr>
+    <td align="center">64-byte ASCII frames</td>
+    <td align="center">Compact binary frames</td>
+  </tr>
+</table>
+
+The spikes in S6 are presses that landed on a 4-frame telemetry burst; the rest wait only for their own frame.
+</details>
+
 ## What the traces show
 
 The rule used to tell the waits apart: **if the Idle task runs during the wait, the CPU is free and the bottleneck
@@ -100,17 +131,29 @@ TC, so the scheduler is not late. The CPU is 92.4 % idle, so the line is the bot
 ## System overview
 
 ```mermaid
-flowchart LR
-    B1([Button B1 · PA0]) -->|edge| EXTI["EXTI0 ISR · prio 5<br/>t0"]
-    EXTI -->|event queue · 8| BT["ButtonTask<br/>A: 2 · B/C: 4<br/>t1, t2"]
-    TT["TelemetryTask · 3<br/>periodic TEL + CPU load"] --> Q
-    BT --> Q["TX queue · 16 slots<br/>FIFO + urgent queue (C)"]
-    Q --> UT["UartTxTask · 1<br/>t3"]
-    UT --> ARB["UART arbiter<br/>TXE interrupt per byte"]
-    ARB --> TC["USART2 TC ISR · prio 5<br/>t4"]
-    TC -->|230400 8N1| GS["Ground station<br/>(browser, Web Serial)"]
-    GS -.->|5-byte command| TT
+flowchart TB
+    EXTI["EXTI0 ISR · NVIC 5<br/>button edge → t0"]
+    BT["ButtonTask<br/>priority A: 2 · B/C: 4<br/>t1, t2"]
+    TT["TelemetryTask · priority 3<br/>periodic TEL + CPU load"]
+    Q[("TX queue · 16 slots<br/>FIFO + urgent queue (variant C)")]
+    UT["UartTxTask · priority 1<br/>UART arbiter → t3"]
+    TC["USART2 TC ISR · NVIC 5<br/>last stop bit → t4"]
+    GS["Ground station · Web Serial<br/>sends variant / scenario commands"]
+
+    EXTI -->|event queue, 8| BT
+    BT --> Q
+    TT --> Q
+    Q --> UT
+    UT -->|TXE interrupt per byte| TC
+    TC -->|230400 8N1| GS
 ```
+
+| Stage | Interval | Dominated by |
+|---|---|---|
+| t1 − t0 | ISR → ButtonTask running | ButtonTask's CPU wait (variant A) |
+| t2 − t1 | build the BTN message | ≈ 2 µs |
+| t3 − t2 | TX queue → transfer starts | queue order, UartTxTask's CPU wait, line busy |
+| t4 − t3 | frame on the wire | frame length: 2.77 ms (64 B) / 0.87 ms (20 B) |
 
 ## Engineering highlights
 

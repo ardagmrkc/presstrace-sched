@@ -79,6 +79,38 @@ Yanıt süresi R (ms), koşu başına 30 basış:
 | **ASCII → ikili çerçeve**, S6 | Bir çerçevenin hatta kaldığı süre 2,77 ms'den 0,82 ms'ye iniyor. 4 çerçevelik patlamanın arkasındaki bekleme de aynı oranda kısalıyor. |
 | **ASCII → ikili çerçeve**, B/S5 | t3−t2 yalnızca 1,84 ms'den 1,72 ms'ye iniyor. Bu bekleme hattan değil CPU'dan; çerçeve boyu çözemez. |
 
+**Koşu başına ortalama aşama süreleri.** Mor, ButtonTask'ın CPU beklemesi (t1−t0). Mavi, aktarımdan önceki kuyruk ve
+CPU beklemesi (t3−t2). Yeşil, çerçevenin hatta geçirdiği süre (t4−t3).
+
+<table>
+  <tr>
+    <td width="50%"><img src="analysis/plots/ascii64/stages_by_scenario.png" alt="Koşu başına ortalama aşama süreleri, 64 baytlık ASCII çerçeve"></td>
+    <td width="50%"><img src="analysis/plots/compact/stages_by_scenario.png" alt="Koşu başına ortalama aşama süreleri, kısa ikili çerçeve"></td>
+  </tr>
+  <tr>
+    <td align="center">64 baytlık ASCII çerçeve</td>
+    <td align="center">Kısa ikili çerçeve</td>
+  </tr>
+</table>
+
+<details>
+<summary><b>Her basışın yanıt süresi</b> (açmak için tıkla)</summary>
+<br>
+<table>
+  <tr>
+    <td width="50%"><img src="analysis/plots/ascii64/r_vs_event.png" alt="Basış başına yanıt süresi, 64 baytlık ASCII çerçeve"></td>
+    <td width="50%"><img src="analysis/plots/compact/r_vs_event.png" alt="Basış başına yanıt süresi, kısa ikili çerçeve"></td>
+  </tr>
+  <tr>
+    <td align="center">64 baytlık ASCII çerçeve</td>
+    <td align="center">Kısa ikili çerçeve</td>
+  </tr>
+</table>
+
+S6'daki sıçramalar, 4 çerçevelik telemetri patlamasına denk gelen basışlardır. Geri kalan basışlar yalnızca kendi
+çerçevelerini bekler.
+</details>
+
 ## İzler ne gösteriyor?
 
 Beklemeleri ayırmak için kullanılan kural: **bekleme sırasında Idle görevi çalışıyorsa CPU boştur; darboğaz hat ya
@@ -97,17 +129,29 @@ bitene kadar çalışamıyor; hat bu sırada boş.
 ## Mimari
 
 ```mermaid
-flowchart LR
-    B1([Buton B1 · PA0]) -->|kenar| EXTI["EXTI0 ISR · öncelik 5<br/>t0"]
-    EXTI -->|olay kuyruğu · 8| BT["ButtonTask<br/>A: 2 · B/C: 4<br/>t1, t2"]
-    TT["TelemetryTask · 3<br/>periyodik TEL + CPU yükü"] --> Q
-    BT --> Q["TX kuyruğu · 16 yer<br/>FIFO + acil kuyruk (C)"]
-    Q --> UT["UartTxTask · 1<br/>t3"]
-    UT --> ARB["UART hakemi<br/>bayt başına TXE kesmesi"]
-    ARB --> TC["USART2 TC ISR · öncelik 5<br/>t4"]
-    TC -->|230400 8N1| GS["Yer istasyonu<br/>(tarayıcı, Web Serial)"]
-    GS -.->|5 baytlık komut| TT
+flowchart TB
+    EXTI["EXTI0 ISR · NVIC 5<br/>buton kenarı → t0"]
+    BT["ButtonTask<br/>öncelik A: 2 · B/C: 4<br/>t1, t2"]
+    TT["TelemetryTask · öncelik 3<br/>periyodik TEL + CPU yükü"]
+    Q[("TX kuyruğu · 16 yer<br/>FIFO + acil kuyruk (C sürümü)")]
+    UT["UartTxTask · öncelik 1<br/>UART hakemi → t3"]
+    TC["USART2 TC ISR · NVIC 5<br/>son durdurma biti → t4"]
+    GS["Yer istasyonu · Web Serial<br/>sürüm / senaryo komutu gönderir"]
+
+    EXTI -->|olay kuyruğu, 8| BT
+    BT --> Q
+    TT --> Q
+    Q --> UT
+    UT -->|bayt başına TXE kesmesi| TC
+    TC -->|230400 8N1| GS
 ```
+
+| Aşama | Aralık | Baskın etken |
+|---|---|---|
+| t1 − t0 | ISR → ButtonTask çalışıyor | ButtonTask'ın CPU beklemesi (A sürümü) |
+| t2 − t1 | BTN mesajını kurmak | ≈ 2 µs |
+| t3 − t2 | TX kuyruğu → aktarım başlıyor | kuyruk sırası, UartTxTask'ın CPU beklemesi, hattın dolu olması |
+| t4 − t3 | çerçeve hatta | çerçeve boyu: 2,77 ms (64 B) / 0,87 ms (20 B) |
 
 ## Mühendislik öne çıkanları
 
