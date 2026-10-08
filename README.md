@@ -96,22 +96,29 @@ transfer (t3−t2), and green is the frame on the wire (t4−t3).
   </tr>
 </table>
 
-<details>
-<summary><b>Response time of every press</b> (click to expand)</summary>
-<br>
+**Response time of every press, before and after the frame change.** Each line is one run of 30 presses; the red
+line is the 20 ms deadline.
+
 <table>
   <tr>
     <td width="50%"><img src="analysis/plots/ascii64/r_vs_event.png" alt="Response time per press, 64-byte ASCII frames"></td>
     <td width="50%"><img src="analysis/plots/compact/r_vs_event.png" alt="Response time per press, compact binary frames"></td>
   </tr>
   <tr>
-    <td align="center">64-byte ASCII frames</td>
-    <td align="center">Compact binary frames</td>
+    <td align="center">64-byte ASCII frames (before)</td>
+    <td align="center">Compact binary frames (after)</td>
   </tr>
 </table>
 
-The spikes in S6 are presses that landed on a 4-frame telemetry burst; the rest wait only for their own frame.
-</details>
+- **S6 (line load).**
+  - With 64-byte frames, presses that land on a 4-frame telemetry burst spike to 9–13 ms in A and B. C caps them
+    at ~5 ms.
+  - With compact frames, the spikes shrink to ≤ 4.1 ms in A. B and C stay flat at ~1.0 ms, the time of their own
+    frame.
+- **S5 (CPU load).**
+  - The spread comes from where a press lands relative to the 5 ms telemetry work, so it remains with both frame
+    formats.
+  - The compact frame lowers the floor from 2.9 ms to 1.0 ms, which is the button's own frame time.
 
 ## What the traces show
 

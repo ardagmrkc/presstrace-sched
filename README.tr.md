@@ -93,23 +93,29 @@ CPU beklemesi (t3−t2). Yeşil, çerçevenin hatta geçirdiği süre (t4−t3).
   </tr>
 </table>
 
-<details>
-<summary><b>Her basışın yanıt süresi</b> (açmak için tıkla)</summary>
-<br>
+**Her basışın yanıt süresi: çerçeve değişikliğinden önce ve sonra.** Her çizgi 30 basışlık bir koşu, kırmızı çizgi
+20 ms sınırı.
+
 <table>
   <tr>
-    <td width="50%"><img src="analysis/plots/ascii64/r_vs_event.png" alt="Basış başına yanıt süresi, 64 baytlık ASCII çerçeve"></td>
-    <td width="50%"><img src="analysis/plots/compact/r_vs_event.png" alt="Basış başına yanıt süresi, kısa ikili çerçeve"></td>
+    <td width="50%"><img src="docs/img/tr/r_vs_event_ascii64.png" alt="Basış başına yanıt süresi, 64 baytlık ASCII çerçeve"></td>
+    <td width="50%"><img src="docs/img/tr/r_vs_event_compact.png" alt="Basış başına yanıt süresi, kısa ikili çerçeve"></td>
   </tr>
   <tr>
-    <td align="center">64 baytlık ASCII çerçeve</td>
-    <td align="center">Kısa ikili çerçeve</td>
+    <td align="center">64 baytlık ASCII çerçeve (önce)</td>
+    <td align="center">Kısa ikili çerçeve (sonra)</td>
   </tr>
 </table>
 
-S6'daki sıçramalar, 4 çerçevelik telemetri patlamasına denk gelen basışlardır. Geri kalan basışlar yalnızca kendi
-çerçevelerini bekler.
-</details>
+- **S6 (hat yükü).**
+  - 64 baytlık çerçevede, 4 çerçevelik telemetri patlamasına denk gelen basışlar A ve B'de 9–13 ms'ye sıçrıyor.
+    C bunları ~5 ms ile sınırlıyor.
+  - Kısa çerçevede A'daki sıçramalar ≤ 4,1 ms'ye iniyor. B ve C ~1,0 ms'de, yani kendi çerçeve süresinde düz
+    kalıyor.
+- **S5 (CPU yükü).**
+  - Dağılım, basışın 5 ms'lik telemetri işine göre nereye denk geldiğinden kaynaklanıyor; bu yüzden iki çerçeve
+    biçiminde de sürüyor.
+  - Kısa çerçeve tabanı 2,9 ms'den 1,0 ms'ye indiriyor. Bu da butonun kendi çerçeve süresi.
 
 ## İzler ne gösteriyor?
 
